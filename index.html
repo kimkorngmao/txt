@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Online Text Editor - Fast, Clean & Simple Notepad in Your Browser</title>
@@ -28,78 +27,600 @@
       darkMode: 'class'
     }
   </script>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Custom scrollbar styles */
+    #editor::-webkit-scrollbar, #line-numbers::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    
+    /* Track */
+    #editor::-webkit-scrollbar-track, #line-numbers::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    /* Handle */
+    #editor::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 6px;
+      border: 3px solid rgba(0, 0, 0, 0);
+      background-clip: padding-box;
+    }
+    
+    #line-numbers::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+    
+    /* Handle on hover */
+    #editor::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+      border: 3px solid rgba(0, 0, 0, 0);
+      background-clip: padding-box;
+    }
+    
+    /* Dark mode scrollbar */
+    .dark #editor::-webkit-scrollbar-thumb {
+      background: #4b5563;
+    }
+    
+    .dark #editor::-webkit-scrollbar-thumb:hover {
+      background: #6b7280;
+    }
+    
+    /* Editor and line numbers styling */
+    #editor {
+      scrollbar-width: thin;
+      scrollbar-color: #c1c1c1 transparent;
+      white-space: pre;
+    }
+    
+    .dark #editor {
+      scrollbar-color: #4b5563 transparent;
+    }
+    
+    #line-numbers {
+      scrollbar-width: none;
+    }
+    
+    #line-numbers::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
 </head>
+<body class="bg-green-50 dark:bg-gray-800">
+  <div class="h-screen max-h-screen flex flex-col dark:bg-gray-900 dark:text-gray-100 max-w-7xl mx-auto border boder-gray-100 dark:border-gray-700" id="main-container">
+    <!-- Header Menu -->
+    <div class="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 text-sm bg-white dark:bg-gray-800" id="menu-bar">
+      <div class="flex">
+        <div class="relative">
+          <button onclick="toggleDropdown('file-menu')" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">File</button>
+          <div id="file-menu" class="absolute top-7 left-0 w-48 hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 z-10">
+            <button onclick="document.getElementById('file-input').click()" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Open</span>
+              <span class="text-gray-400">Ctrl+O</span>
+            </button>
+            <input id="file-input" type="file" onchange="openFile(event)" class="hidden" />
+            <button onclick="downloadText()" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Download</span>
+              <span class="text-gray-400">Ctrl+S</span>
+            </button>
+          </div>
+        </div>
+        <div class="relative">
+          <button onclick="toggleDropdown('edit-menu')" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">Edit</button>
+          <div id="edit-menu" class="absolute top-7 left-0 w-48 hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 z-10">
+            <button onclick="editorCommand('undo')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Undo</span>
+              <span class="text-gray-400">Ctrl+Z</span>
+            </button>
+            <button onclick="editorCommand('redo')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Redo</span>
+              <span class="text-gray-400">Ctrl+Y</span>
+            </button>
+            <button onclick="editorCommand('cut')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Cut</span>
+              <span class="text-gray-400">Ctrl+X</span>
+            </button>
+            <button onclick="editorCommand('copy')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Copy</span>
+              <span class="text-gray-400">Ctrl+C</span>
+            </button>
+            <button onclick="editorCommand('paste')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Paste</span>
+              <span class="text-gray-400">Ctrl+V</span>
+            </button>
+            <button onclick="editorCommand('selectAll')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Select All</span>
+              <span class="text-gray-400">Ctrl+A</span>
+            </button>
+          </div>
+        </div>
+        <div class="relative">
+          <button onclick="toggleDropdown('font-menu')" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">Font</button>
+          <div id="font-menu" class="absolute top-7 left-0 w-48 hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 z-10">
+            <button onclick="setFont('Arial, sans-serif')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer" style="font-family: Arial, sans-serif">Arial</button>
+            <button onclick="setFont('Courier New, monospace')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer" style="font-family: Courier New, monospace">Courier New</button>
+            <button onclick="setFont('Georgia, serif')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer" style="font-family: Georgia, serif">Georgia</button>
+            <button onclick="setFont('Times New Roman, serif')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer" style="font-family: Times New Roman, serif">Times New Roman</button>
+            <button onclick="setFont('Verdana, sans-serif')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer" style="font-family: Verdana, sans-serif">Verdana</button>
+            <button onclick="setFont('Consolas, monospace')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer" style="font-family: Consolas, monospace">Consolas</button>
+            <button onclick="setFont('')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">Default Font</button>
+          </div>
+        </div>
+        <div class="relative">
+          <button onclick="toggleDropdown('view-menu')" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">View</button>
+          <div id="view-menu" class="absolute top-7 left-0 w-48 hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 z-10">
+            <button onclick="adjustFontSize(1)" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Zoom In</span>
+              <span class="text-gray-400">Ctrl++</span>
+            </button>
+            <button onclick="adjustFontSize(-1)" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Zoom Out</span>
+              <span class="text-gray-400">Ctrl+-</span>
+            </button>
+            <button onclick="resetFontSize()" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span>Reset Size</span>
+              <span class="text-gray-400">Ctrl+0</span>
+            </button>
+            <button onclick="toggleLineNumbers()" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer flex justify-between">
+              <span id="line-numbers-toggle-text">Show Line Numbers</span>
+              <span class="text-gray-400">Ctrl+L</span>
+            </button>
+          </div>
+        </div>
+        <div class="relative">
+          <button onclick="toggleDropdown('system-menu')" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">System</button>
+          <div id="system-menu" class="absolute top-7 left-0 w-48 hidden bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 z-10">
+            <button onclick="setTheme('light')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">Light Mode</button>
+            <button onclick="setTheme('dark')" class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-600 cursor-pointer">Dark Mode</button>
+          </div>
+        </div>
+      </div>
+      <div class="px-3 py-1">
+        <button id="fullscreen-btn" onclick="toggleFullScreen()" class="rounded transition text-gray-700 dark:text-gray-100 focus:outline-none flex items-center justify-center hidden lg:flex" aria-label="Toggle Full Screen" title="Full Screen"></button>
+      </div>
+    </div>
 
-<body class="h-screen">
-  <div class="fixed top-3 right-3 flex gap-2 z-10">
-    <button id="toggleTheme" aria-label="Toggle theme"
-      class="p-1.5 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-      <!-- Icon will be inserted by JS -->
-    </button>
-    <button id="formatBtn" aria-label="Remove formatting"
-      class="p-1.5 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700 dark:text-gray-300" viewBox="0 0 24 24">
-        <path fill="currentColor"
-          d="M12 19a1 1 0 0 1-1-1V6a1 1 0 0 1 2 0v12a1 1 0 0 1-1 1m6 0h-2a1 1 0 0 1 0-2h2a1 1 0 0 1 0 2M6 19H4a1 1 0 0 1 0-2h2a1 1 0 0 1 0 2m.09-13.406l1.413-1.414l1.414 1.414l-1.414 1.414zM19.51 5.594L18.097 4.18l1.414-1.414l1.414 1.414z" />
-      </svg>
-    </button>
-    <button id="fontSizeDecrease" aria-label="Decrease font size"
-      class="p-1.5 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700 dark:text-gray-300" viewBox="0 0 24 24">
-        <path d="M5.12 14L7.5 7.67L9.87 14M6.5 5L1 19h2.25l1.12-3h6.25l1.13 3H14L8.5 5h-2M18 17l5-5l-5-5v10Z" />
-      </svg>
-      <span
-        class="font-size-label absolute bottom-[-25px] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-xs whitespace-nowrap">Decrease
-        font size (Ctrl+-)</span>
-    </button>
-    <button id="fontSizeIncrease" aria-label="Increase font size"
-      class="p-1.5 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700 dark:text-gray-300" viewBox="0 0 24 24">
-        <path d="M5.12 14L7.5 7.67L9.87 14M6.5 5L1 19h2.25l1.12-3h6.25l1.13 3H14L8.5 5h-2M18 7l-5 5l5 5V7Z" />
-      </svg>
-      <span
-        class="font-size-label absolute bottom-[-25px] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-xs whitespace-nowrap">Increase
-        font size (Ctrl++)</span>
-    </button>
-    <button id="downloadBtn" aria-label="Download text"
-      class="p-1.5 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700 dark:text-gray-300" viewBox="0 0 24 24">
-        <path fill="currentColor"
-          d="M12 15.575q-.2 0-.375-.063q-.175-.062-.325-.212l-3.6-3.6q-.275-.275-.275-.7q0-.425.275-.7q.275-.275.7-.275q.425 0 .7.275l1.9 1.9V4q0-.425.288-.713Q11.575 3 12 3t.713.287Q13 3.575 13 4v8.2l1.9-1.9q.275-.275.7-.275q.425 0 .7.275q.275.275.275.7q0 .425-.275.7l-3.6 3.6q-.15.15-.325.212q-.175.063-.375.063M6 21q-.825 0-1.413-.587Q4 19.825 4 19v-2q0-.425.287-.713Q4.575 16 5 16t.713.287Q6 16.575 6 17v2h12v-2q0-.425.288-.713Q18.575 16 19 16t.712.287Q20 16.575 20 17v2q0 .825-.587 1.413Q18.825 21 18 21z" />
-      </svg>
-      <span
-        class="font-size-label absolute bottom-[-25px] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-xs whitespace-nowrap">Download
-        text</span>
-    </button>
+    <!-- Textarea with Line Numbers -->
+    <div class="flex flex-1 min-h-0">
+      <div class="flex flex-1 min-h-0 w-full">
+        <div id="editor-container" class="flex flex-1 min-h-0 w-full overflow-hidden border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+          <div id="line-numbers" class="select-none text-right pr-2 py-4 text-gray-400 dark:text-gray-600 overflow-hidden hidden" style="min-width:2.5rem; background:inherit; font-family:inherit;"></div>
+          <div id="editor" contenteditable="true" class="w-full flex-1 p-4 outline-none overflow-auto bg-white dark:bg-gray-900 dark:text-gray-100" style="min-height:100%; font-family:inherit;"></div>
+        </div>
+      </div>
+    </div>
 
-    <div id="formatOptions"
-      class="format-options absolute top-full right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-lg">
-      <button data-format="all"
-        class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Remove
-        All Formatting</button>
-      <button data-format="background"
-        class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Remove
-        Background</button>
-      <button data-format="color"
-        class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Remove
-        Text Color</button>
-      <button data-format="style"
-        class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Remove
-        Font Styles</button>
+    <!-- Footer Bar -->
+    <div class="flex justify-between p-2 text-sm border-t bg-gray-100 dark:bg-gray-800 dark:border-gray-700">
+      <div id="status"></div>
+      <div id="counts">Words: 0 | Chars: 0</div>
     </div>
   </div>
 
-  <div class="flex h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-    <div id="lineNumbers"
-      class="bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500 p-2.5 text-right select-none text-sm overflow-hidden min-w-12">
-      1</div>
-    <div id="editor" contenteditable="true"
-      class="empty flex-1 p-2.5 whitespace-pre-wrap outline-none overflow-auto text-sm relative"
-      data-placeholder="Start typing..."></div>
-  </div>
+  <script>
+    const editor = document.getElementById('editor');
+    const status = document.getElementById('status');
+    const counts = document.getElementById('counts');
+    const lineNumbers = document.getElementById('line-numbers');
+    let fontSize = 16;
+    let lineNumbersVisible = false;
 
-  <script src="app.js"></script>
+    // SVGs for fullscreen and exit
+    const fullscreenSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M2 4.00087C2 3.44811 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.44463 22 4.00087V17.9991C22 18.5519 21.5447 19 21.0082 19H2.9918C2.44405 19 2 18.5554 2 17.9991V4.00087ZM4 5V17H20V5H4ZM5 20H19V22H5V20Z"></path></svg>`;
+    const exitFullscreenSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M4 16H20V5H4V16ZM13 18V20H17V22H7V20H11V18H2.9918C2.44405 18 2 17.5511 2 16.9925V4.00748C2 3.45107 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.44892 22 4.00748V16.9925C22 17.5489 21.5447 18 21.0082 18H13Z"></path></svg>`;
+
+    // --- KEYBOARD SHORTCUTS ---
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+          case 'o':
+            e.preventDefault();
+            document.getElementById('file-input').click();
+            break;
+          case 's':
+            e.preventDefault();
+            downloadText();
+            break;
+          case '+':
+          case '=':
+            e.preventDefault();
+            adjustFontSize(1);
+            break;
+          case '-':
+            e.preventDefault();
+            adjustFontSize(-1);
+            break;
+          case '0':
+            e.preventDefault();
+            resetFontSize();
+            break;
+          case 'l':
+            e.preventDefault();
+            toggleLineNumbers();
+            break;
+        }
+      }
+    });
+
+    // --- THEME: Load theme from localStorage on page load ---
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+    loadTheme();
+
+    // --- EDITOR CONTENT: Load from localStorage on page load ---
+    function loadEditorContent() {
+      const savedContent = localStorage.getItem('editorContent');
+      if (savedContent !== null) {
+        editor.innerText = savedContent;
+      }
+    }
+    loadEditorContent();
+
+    // --- FONT SIZE: Load from localStorage on page load ---
+    function loadFontSize() {
+      const savedFontSize = localStorage.getItem('editorFontSize');
+      if (savedFontSize) {
+        fontSize = parseInt(savedFontSize);
+      } else {
+        fontSize = 16;
+      }
+      editor.style.fontSize = fontSize + 'px';
+      lineNumbers.style.fontSize = fontSize + 'px';
+      updateLineNumbers();
+    }
+    loadFontSize();
+
+    // --- LINE NUMBERS VISIBILITY: Load from localStorage on page load ---
+    function loadLineNumbersVisibility() {
+      const savedVisibility = localStorage.getItem('lineNumbersVisible');
+      lineNumbersVisible = savedVisibility === 'true';
+      updateLineNumbersVisibility();
+    }
+    loadLineNumbersVisibility();
+
+    // --- FONT FAMILY: Load from localStorage on page load ---
+    function loadFontFamily() {
+      const savedFontFamily = localStorage.getItem('editorFontFamily');
+      if (savedFontFamily) {
+        editor.style.fontFamily = savedFontFamily;
+        lineNumbers.style.fontFamily = savedFontFamily;
+      }
+    }
+    loadFontFamily();
+
+    function setFont(fontFamily) {
+      editor.style.fontFamily = fontFamily;
+      lineNumbers.style.fontFamily = fontFamily;
+      localStorage.setItem('editorFontFamily', fontFamily);
+      updateLineNumbers();
+    }
+
+    function adjustFontSize(change) {
+      fontSize = Math.max(10, Math.min(32, fontSize + change));
+      editor.style.fontSize = fontSize + 'px';
+      lineNumbers.style.fontSize = fontSize + 'px';
+      localStorage.setItem('editorFontSize', fontSize.toString());
+      updateLineNumbers();
+    }
+
+    function resetFontSize() {
+      fontSize = 16;
+      editor.style.fontSize = fontSize + 'px';
+      lineNumbers.style.fontSize = fontSize + 'px';
+      localStorage.setItem('editorFontSize', fontSize.toString());
+      updateLineNumbers();
+    }
+
+    function toggleLineNumbers() {
+      lineNumbersVisible = !lineNumbersVisible;
+      localStorage.setItem('lineNumbersVisible', lineNumbersVisible.toString());
+      updateLineNumbersVisibility();
+      updateLineNumbers();
+    }
+
+    function updateLineNumbersVisibility() {
+      const toggleText = document.getElementById('line-numbers-toggle-text');
+      if (lineNumbersVisible) {
+        lineNumbers.classList.remove('hidden');
+        toggleText.textContent = 'Hide Line Numbers';
+      } else {
+        lineNumbers.classList.add('hidden');
+        toggleText.textContent = 'Show Line Numbers';
+      }
+    }
+
+    function getTextWithCorrectLineBreaks(el) {
+      let text = '';
+      let isOnFreshLine = true;
+
+      function parse(nodes) {
+        nodes.forEach(node => {
+          if (node.nodeName === 'BR') {
+            text += '\n';
+            isOnFreshLine = true;
+            return;
+          }
+
+          if (node.nodeName === 'DIV') {
+            if (!isOnFreshLine) text += '\n';
+            isOnFreshLine = true;
+            if (node.childNodes.length === 0) {
+              // Empty line
+              text += '\n';
+            }
+          }
+
+          if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+            text += node.textContent;
+            isOnFreshLine = false;
+          }
+
+          if (node.childNodes.length) {
+            parse(Array.from(node.childNodes));
+          }
+        });
+      }
+
+      parse(Array.from(el.childNodes));
+
+      // Ensure at least one line is always returned
+      return text.replace(/\n{2,}$/, '\n') || '\n';
+    }
+
+
+    function updateLineNumbers() {
+      if (!lineNumbersVisible) return;
+
+      const text = getTextWithCorrectLineBreaks(editor);
+      const lineCount = Math.max(1, text.split('\n').length);
+
+      const comp = window.getComputedStyle(editor);
+      const lh = comp.lineHeight === 'normal'
+        ? Math.floor(fontSize * 1.5)
+        : parseInt(comp.lineHeight, 10);
+
+      let html = '';
+      for (let i = 1; i <= lineCount; i++) {
+        html += `<div style="height:${lh}px; line-height:${lh}px;">${i}</div>`;
+      }
+
+      lineNumbers.innerHTML = html;
+      lineNumbers.scrollTop = editor.scrollTop;
+    }
+
+    // Update line numbers on various events
+    const lineUpdateEvents = ['input', 'click', 'keyup', 'mouseup', 'scroll', 'paste'];
+    lineUpdateEvents.forEach(event => {
+      editor.addEventListener(event, () => {
+        // Use setTimeout to ensure the event is fully processed
+        setTimeout(() => {
+          updateLineNumbers();
+          updateCounts();
+        }, 0);
+      });
+    });
+    
+    // Special handling for paste event
+    editor.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+      
+      // Update counts and cursor info after paste
+      setTimeout(() => {
+        updateCounts();
+        updateCursorInfo();
+        updateLineNumbers();
+      }, 0);
+    });
+
+    function updateCounts() {
+      const text = editor.innerText;
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      const chars = text.length;
+      counts.textContent = `Words: ${words} | Chars: ${chars}`;
+      // Save the actual text content (not HTML) to localStorage
+      localStorage.setItem('editorContent', text);
+    }
+
+    function updateCursorInfo() {
+      status.textContent = '';
+    }
+
+    function downloadText() {
+      const blob = new Blob([editor.innerText], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'note.txt';
+      link.click();
+    }
+
+    function openFile(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          editor.innerText = reader.result;
+          localStorage.setItem('editorContent', reader.result);
+          updateCounts();
+          updateCursorInfo();
+          updateLineNumbers();
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    // --- THEME: Save theme to localStorage when changed ---
+    function setTheme(mode) {
+      if (mode === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('theme', mode);
+    }
+
+    // --- EDIT MENU COMMANDS ---
+    function editorCommand(cmd) {
+      editor.focus();
+      
+      if (cmd === 'paste') {
+        // For paste, try to read from clipboard API if available
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(text => {
+            document.execCommand('insertText', false, text);
+            updateCounts();
+            updateCursorInfo();
+            updateLineNumbers();
+          }).catch(err => {
+            // Fallback to regular paste command
+            document.execCommand('paste');
+            setTimeout(() => {
+              updateCounts();
+              updateCursorInfo();
+              updateLineNumbers();
+            }, 0);
+          });
+        } else {
+          // Fallback for older browsers
+          document.execCommand('paste');
+          setTimeout(() => {
+            updateCounts();
+            updateCursorInfo();
+            updateLineNumbers();
+          }, 0);
+        }
+        return;
+      }
+      
+      // Handle other commands
+      switch (cmd) {
+        case 'undo':
+          document.execCommand('undo');
+          break;
+        case 'redo':
+          document.execCommand('redo');
+          break;
+        case 'cut':
+          document.execCommand('cut');
+          break;
+        case 'copy':
+          document.execCommand('copy');
+          break;
+        case 'selectAll':
+          document.execCommand('selectAll');
+          break;
+      }
+      
+      // Update counts after command execution
+      setTimeout(() => {
+        updateCounts();
+        updateCursorInfo();
+        updateLineNumbers();
+      }, 0);
+    }
+
+    // --- MENU DROPDOWNS: Toggle on click, close on outside click ---
+    function toggleDropdown(id) {
+      // Close all dropdowns except the one being toggled
+      const dropdowns = ['file-menu', 'edit-menu', 'font-menu', 'view-menu', 'system-menu'];
+      dropdowns.forEach(menuId => {
+        const el = document.getElementById(menuId);
+        if (el) {
+          if (menuId === id) {
+            el.classList.toggle('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+    }
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+      const menuBar = document.getElementById('menu-bar');
+      if (!menuBar.contains(event.target)) {
+        ['file-menu', 'edit-menu', 'font-menu', 'view-menu', 'system-menu'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+      }
+    });
+
+    // --- SCROLL SYNC: Line numbers scroll with editor ---
+    const editorDiv = document.getElementById('editor');
+    const lineNumbersDiv = document.getElementById('line-numbers');
+    editorDiv.addEventListener('scroll', function() {
+      lineNumbersDiv.scrollTop = editorDiv.scrollTop;
+    });
+
+    // --- FULL SCREEN TOGGLE ---
+    function setFullScreenState(isFull) {
+      const main = document.getElementById('main-container');
+      const btn = document.getElementById('fullscreen-btn');
+      const classes = ['max-w-7xl', 'mx-auto', 'border', 'boder-gray-100'];
+      if (isFull) {
+        main.classList.remove(...classes);
+        btn.innerHTML = exitFullscreenSVG;
+        btn.title = 'Exit Full Screen';
+        localStorage.setItem('fullscreen', '1');
+      } else {
+        main.classList.add(...classes);
+        btn.innerHTML = fullscreenSVG;
+        btn.title = 'Full Screen';
+        localStorage.setItem('fullscreen', '0');
+      }
+    }
+
+    function isLargeScreen() {
+      return window.innerWidth >= 1024;
+    }
+
+    function toggleFullScreen() {
+      if (!isLargeScreen()) {
+        // Optionally, show a tooltip or alert
+        const btn = document.getElementById('fullscreen-btn');
+        btn.title = 'Full Screen is only available on large screens';
+        btn.blur();
+        return;
+      }
+      const main = document.getElementById('main-container');
+      const classes = ['max-w-7xl', 'mx-auto', 'border', 'boder-gray-100'];
+      const isFull = classes.every(cls => !main.classList.contains(cls));
+      setFullScreenState(!isFull);
+    }
+
+    // Update button title on resize
+    window.addEventListener('resize', () => {
+      const btn = document.getElementById('fullscreen-btn');
+      if (!isLargeScreen()) {
+        btn.title = 'Full Screen is only available on large screens';
+      } else {
+        const main = document.getElementById('main-container');
+        const classes = ['max-w-7xl', 'mx-auto', 'border', 'boder-gray-100'];
+        const isFull = classes.every(cls => !main.classList.contains(cls));
+        btn.title = isFull ? 'Exit Full Screen' : 'Full Screen';
+      }
+      // Update line numbers when window resizes (for text wrapping)
+      updateLineNumbers();
+    });
+
+    // On load, set initial state from localStorage (default: windowed)
+    window.addEventListener('DOMContentLoaded', () => {
+      const isFull = localStorage.getItem('fullscreen') === '1';
+      setFullScreenState(isFull);
+    });
+
+    // Initial load
+    updateCounts();
+    updateCursorInfo();
+    updateLineNumbers();
+  </script>
 </body>
-
 </html>
